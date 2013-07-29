@@ -512,10 +512,16 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void appendToLog(String text) {
+        try {
+            log.insertString(log.getLength(),text,null);
+        } catch (BadLocationException e) {
+         System.err.println("Output Error" + e.getMessage() + newline);   
+        }
+    }
+    
     private void serialSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serialSelectActionPerformed
-        try{
-        log.insertString(log.getLength(), "now selected: " + serialSelect.getSelectedItem()
-                + newline,null);
+        appendToLog("now selected: " + serialSelect.getSelectedItem() + newline);
         selectedComPort = (String) serialSelect.getSelectedItem();
         try {
             mySerial.disconnect();
@@ -523,10 +529,7 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
             log.insertString(log.getLength(), selectedComPort + " is now connected." + newline,null);
             Thread.sleep(1000);
         } catch (Exception ex) {
-            log.insertString(log.getLength(), "Error : " + ex.getMessage() + newline,null);
-        }
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
+           appendToLog( "Error : " + ex.getMessage() + newline);
         }
 
     }//GEN-LAST:event_serialSelectActionPerformed
@@ -546,23 +549,19 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
 
     private void loadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadButtonActionPerformed
         int returnVal = fc.showOpenDialog(this);
-        try {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             //This is where a real application would open the file.
-            log.insertString(log.getLength(), "Opening: " + file.getAbsolutePath() + "."
-                    + newline,null);
+            appendToLog( "Opening: " + file.getAbsolutePath() + "."
+                    + newline);
             if (file.length() <= 32768) {
                 loadFile(file);
             } else {
-                log.insertString(log.getLength(), "Error: " + file.getName()
-                        + "is too big to load.",null);
+                appendToLog( "Error: " + file.getName()
+                        + "is too big to load.");
             }
         } else {
-            log.insertString(log.getLength(), "Open command cancelled by user." + newline,null);
-        }
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
+            appendToLog( "Open command cancelled by user." + newline);
         }
 
     }//GEN-LAST:event_loadButtonActionPerformed
@@ -585,39 +584,31 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
 
         int len = textPane.getDocument().getLength();
         textPane.setCaretPosition(len);
-        try {
-        log.insertString(log.getLength(), "now selected: " + eepromTypeSelect.getSelectedItem()
+        appendToLog( "now selected: " + eepromTypeSelect.getSelectedItem()
                 + ", address range = 0x0000 to 0x"
-                + Utility.wordToHex(maxAddress - 1) + newline,null);
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
-        }
+                + Utility.wordToHex(maxAddress - 1) + newline);
        
     }//GEN-LAST:event_eepromTypeSelectActionPerformed
 
     private void offsetSelectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_offsetSelectActionPerformed
         offset = offsetSelect.getSelectedIndex() * 1024;
-        try{
-        log.insertString(log.getLength(), "Offset is now set to : " + offsetSelect.getSelectedItem() + newline,null);
-        log.insertString(log.getLength(), "data will be written from 0x" + Utility.wordToHex(offset) + newline,null);
+
+        appendToLog("Offset is now set to : " + offsetSelect.getSelectedItem() + newline);
+        appendToLog("data will be written from 0x" + Utility.wordToHex(offset) + newline);
 
         if (offset + filesize > maxAddress) {
             JOptionPane.showMessageDialog(this, "The offset you choose will cause the current file not to fit in the choosen EEPROM anymore", "Warning", JOptionPane.WARNING_MESSAGE);
             textPane.setForeground(Color.red);
-            log.insertString(log.getLength(), "WARNING!! The offset you choose will cause the current file not to fit in the choosen EEPROM anymore " + newline,null);
+            appendToLog("WARNING!! The offset you choose will cause the current file not to fit in the choosen EEPROM anymore " + newline);
             textPane.setForeground(Color.black);
 
             textPane.setCaretPosition(textPane.getDocument().getLength());
-        }
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
         }
         
     }//GEN-LAST:event_offsetSelectActionPerformed
 
     private void versionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_versionButtonActionPerformed
-        try { 
-            log.insertString(log.getLength(), "Simple JBurn - Revision : " + revision + ", " + date + newline,null);
+            appendToLog("Simple JBurn - Revision : " + revision + ", " + date + newline);
         if (mySerial.isConnected()) {
             try {
                 mySerial.out.write('V');
@@ -628,43 +619,34 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
                     c = (byte) mySerial.in.read();
                     line = line + (char) c;
                     if (c == '\n') {
-                        log.insertString(log.getLength(), line,null);
+                        appendToLog( line);
                         line = "";
                     }
                 } while (c != '\n');
             } catch (Exception e) {
-                log.insertString(log.getLength(), "Error: " + e.getMessage() + newline,null);
+                appendToLog("Error: " + e.getMessage() + newline);
             }
         } else {
-            log.insertString(log.getLength(), "Error: Not connected to any Programmer!" + newline,null);
-        }
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
+            appendToLog("Error: Not connected to any Programmer!" + newline);
         }
     }//GEN-LAST:event_versionButtonActionPerformed
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
-        try {
             int returnVal = fc.showSaveDialog(this);
-       
-
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             //This is where a real application would open the file.
-            log.insertString(log.getLength(), "Saving: " + file.getAbsolutePath() + "."
-                    + newline,null);
+            appendToLog("Saving: " + file.getAbsolutePath() + "."
+                    + newline);
             try {
                 FileOutputStream fout = new FileOutputStream(file.getAbsolutePath());
                 fout.write(eeprom, 0, maxAddress);
-                log.insertString(log.getLength(), maxAddress + " bytes saved to \"" + file.getName() + "\"" + newline,null);
+                appendToLog( maxAddress + " bytes saved to \"" + file.getName() + "\"" + newline);
             } catch (IOException e) {
-                log.insertString(log.getLength(), "Error while saving file",null);
+                appendToLog( "Error while saving file");
             }
         } else {
-            log.insertString(log.getLength(), "Save command cancelled by user." + newline,null);
-        }
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
+            appendToLog( "Save command cancelled by user." + newline);
         }
     }//GEN-LAST:event_saveButtonActionPerformed
 
@@ -676,12 +658,7 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
             }
             line = line + Utility.byteToHex(data[i]) + " ";
             if (i % 32 == 31) {
-                try {
-                log.insertString(log.getLength(), line + newline,null);
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
-        }
-                
+                appendToLog( line + newline);
                 line = "";
             }
 
@@ -696,17 +673,11 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
             }
             line = line + Utility.byteToHex(eeprom[i]) + " ";
             if (i % 32 == 31) {
-                try {
-                log.insertString(log.getLength(), line + newline,null);
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
-        }
-                
+                appendToLog(line + newline);
                 line = "";
             }
 
         }
-        textPane.setCaretPosition(textPane.getDocument().getLength());
     }//GEN-LAST:event_showDataButtonActionPerformed
 
     private void showDiffButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showDiffButtonActionPerformed
@@ -736,11 +707,8 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
     }//GEN-LAST:event_readButtonActionPerformed
 
     private void clearButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearButtonActionPerformed
-        try { log.insertString(log.getLength(), "Clearing EEPROM. setting " + maxAddress + " bytes to 0x00"
-                + newline,null);
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
-        }
+        appendToLog("Clearing EEPROM. setting " + maxAddress + " bytes to 0x00"
+                + newline);
         for (int i = 0; i < maxAddress; i++) {
             data[i] = 0;
         }
@@ -757,22 +725,16 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
     }//GEN-LAST:event_clearButtonActionPerformed
 
     public void loadFile(File file) {
-        try {
             try {
                 FileInputStream fin = new FileInputStream(file.getAbsolutePath());
                 filesize = file.length();
                 for (int i = 0; i < file.length(); i++) {
                     data[i] = (byte) fin.read();
                 }
-                log.insertString(log.getLength(), filesize + " bytes loaded from \"" + file.getName() + "\"" + newline, null);
+                appendToLog( filesize + " bytes loaded from \"" + file.getName() + "\"" + newline);
             } catch (IOException e) {
-                log.insertString(log.getLength(), "Error: File not found", null);
+                appendToLog( "Error: File not found");
             }
-        } catch (BadLocationException e) {
-            System.err.println("Output Error");
-        }
-
-        textPane.setCaretPosition(textPane.getDocument().getLength());
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton clearButton;
