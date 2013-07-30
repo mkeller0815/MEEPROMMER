@@ -1,6 +1,6 @@
 #special project config
-/dist/
-/build/
+SimpleJBurn/dist/
+SimpleJBurn/build/
 
 #global config
 # Compiled source #
