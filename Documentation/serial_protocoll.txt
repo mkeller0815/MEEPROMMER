@@ -1,0 +1,238 @@
+################################################################################
+#
+# Atmega328 based EEPROM 28C64,28C256 programmer
+# serial protocol description
+#
+# $Date: 2013/04/12 10:55:16 $
+# $Author: mario $
+# $Revision: 1.4 $
+#
+# $Id: serial_protocoll.txt,v 1.4 2013/04/12 10:55:16 mario Exp mario $
+# $Source: /Users/mario/Projekte/HomeBrew6502/Hardware/EEPROM\040Programmer/serial_protocoll.txt,v $
+#  
+################################################################################
+
+Description
+###########
+
+This document describes the serial protocol that is used to talk
+to the programmer. 
+
+The programmer supports binary data as well as the Intel HEX format
+version I08HEX. (support for datatype "00" and "01").
+If the I08HEX dataset is page-aligned with a maximum of 64 bytes per 
+row, the programmer automatically uses the fast page-write mode.
+
+For the binary modei, page-write can be selected directly by the 
+write command.
+
+The software uses the "Data polling" mode (DB7) of the AT and ST 
+models of the 28Cxxx EEPROMS to determine the end of a write cycle.
+
+Communication
+#############
+
+The baud rate is fixed at 9600,8,N,1. This should be enough because
+it provides about 1k of data to be written in one second by using 
+binary write in page mode.
+
+The programmer waits on its serial port for a command. Any command 
+that is send to the programmer will be parsed and executed. At the
+end a return code of 2 bytes will be send back (at least) with 
+information about the success of the command execution. 
+
+A command has to be terminated by either LF (0x0A) or CR/LF (0x0D 0x0A)
+Parameters are separated by ","
+
+Example: "bw,0f00,00ff" (command binary write at 0x0f00, 255 bytes)
+         After sending the command you can check for any error code.
+	 If no code is send by the programmer you can start transmitting
+	 the data.
+
+If a command was given that reads data from the EEPROM, the return 
+code is send after the data has been sent. To separate the return 
+code from the "data", you have to count the number of data bytes. 
+This should be easy, cause for all write and read commands a 
+implicit or explicit length is needed in the command parameters.
+
+Adresses and length values are always given as hex numbers that
+are always 4 byte hex values for a 16bit address 0000 to 7fff  
+without the '0x' prefix. Any number bigger the 7fff will cause
+an error because you should never have a address beyond 0x7fff.
+
+Commands and parameters are always given as ASCII text, 
+
+Commands
+########
+
+* bw	- binary write byte mode
+* pw	- binary write page mode
+* br	- binary read 
+* hw	- intel hex write
+* Hw	- intel hex write (page mode)
+* hr	- intel hex read
+* ??	- print help
+* ve	* print version
+
+
+Error codes
+###########
+
+* 00	- OK
+* 01	- unknown command
+* 02	- data length mismatch
+* 03    - timeout waiting for data
+* 04	- page align error (page write mode)
+* 05    - too many bytes (page write mode)
+* 06	- wrong checksum
+* 07	- datatype not implemented (intel hex format)
+* 08    - wrong data line format (intel hex format)
+* 09	- wrong hex value in address or byte value
+
+bw command:
+-----------
+
+  syntax:	bw,address,length
+
+  parameter:	address :	16 bit value (0000 to 7fff) repesenting the 
+				start address of the bytes to write
+		length  :	16 bit value (0000 to 7fff) with number of 
+				bytes to be written 
+
+  description:	binary write "length" bytes beginning with "address". After the
+		command is sent the programmer responses only in case of an 
+		error with a return code. After sending the command the number 
+		of databytes (binary, not as hex value) have to be send to the 
+		programmer. If the number is not reached, the programmer waits 
+		5 seconds after recieving the last byte until an error code is 
+		returned (error 02 - data length mismatch). If too many bytes 
+		are send, the programmer will stop writing the received bytes 
+		to the eeprom after the "length" number of bytes are reached, 
+		but the next byte that is send after that will be interpreted 
+		as new command, causing either an error (01 - unknown command) 
+		or unwanted behavior, because the byte is recognized as command
+		If the write cycle needs some time to finish, you may have to 
+		insert some breaks of about 50 ms after each 100 bytes. 
+		After the bytes are successful written, the return code 
+		"00" (OK) is returned, then the programmer waits for the next 
+		command. 
+
+
+pw command:
+-----------
+
+  syntax:	pw,address,length
+
+  parameter:    address :       16 bit value (0000 to 7fff) repesenting the 
+				start address of the bytes to write.
+				the address has to be page aligned. 
+				0000, 0040, 0080, 00a0, 0100, ... , etc.
+                length  :       16 bit value (0000 to 0040) with number of 
+				bytes to be written (maximum 64 byte)
+
+
+  description:	binary write data in "page mode". This mode is much faster 
+		then writing single bytes, but has some requirements. First is 
+		that the address has to be page aligned. The next is that only 
+		64 bytes can be written in one step. The bytes are read into 
+		an internal buffer befor writing. The rest is done in the same 
+		way like writing binary bytes. After the command is sent, the 
+		programmer responses with a return value only in case of an 
+		error. You can start sending the bytes directly after sending 
+		the command string. In case of a misalignment of the address 
+		the return value "04" (page align error) is returned. If the 
+		length parameter is bigger then 0x0040 (64 bytes) the error 
+		"05" (too many bytes) is returned. In case of any error, do 
+		not start sending databytes, as they are interpreted as new 
+		command, causing errors or unwanted behavior.  
+
+br command:
+-----------
+
+  syntax:	br,address,length
+
+  parameter:    address :       16 bit value (0000 to 7fff) repesenting the 
+				start address of the bytes to read
+                length  :       16 bit value (0000 to 7fff) with number of 
+				bytes to be read
+
+  description:	binary read data, beginning at the given address. The "length" 
+		number of bytes are read from the eeprom and send to the serial
+		connection as single byte values (not hex values). After the 
+		"length" number of bytes are sent, the additional return value 
+		"00" (OK) is sent. Be aware that these two byte do not belong 
+		to the data from the eeprom, so take care for the number of 
+		bytes that you expect from the read command.  
+
+hw command:	
+-----------
+
+  syntax:	hw
+
+  parameter:	none
+
+  description:	start intel hex format write. The current firmware only supports
+		I09HEX format, implementing the "00" data record and the "01" 
+		end of file record types. the maximum number of bytes per data 
+		line is 256 (third field in record line 0x00 to 0xff ). The 
+		line has to end with either LF or CR/LF. A complete line is read
+		into an internal buffer and then is parsed and written to the 
+		EEPROM. If the address is page aligned an there are not more 
+		then 64 bytes in the line the programmer automatically uses the
+		faster page write mode.  If the checksum is not correct, an 
+		error is returned (06) and the data line will not be written.
+		Errors are also returned if 
+		* a wrong record type is used (07)
+		* the format of the dataline is not correct (08)
+		* mistyped hex values are found in the line (09)
+		* the line is not completed and a timeout occures (03)
+		After the line is written, the return value "00" is send to 
+		indicate that the next line can be written. The last line to 
+		send is a "01" record line (end of file record) to end the hex 
+		write mode.
+
+
+
+hr command:
+-----------
+
+  syntax:	hr,address,length,bbl
+
+  parameter:    address :       16 bit value (0000 to 7fff) repesenting the 
+				start address of the bytes to read
+                length  :       16 bit value (0000 to 7fff) with number of 
+				bytes to be read
+		bbl	:	8 bit value (00 to ff) with the number 
+				of bytes per line
+
+  description:  this mode works like the binary read mode, except, that the 
+		data is transmitted as intel hex format. Each line contains 
+		the number of data bytes specified in the "bbl" parameter 
+		(max. 255) also the checksum is provided at the end of the line.
+		Lines are separated by "LF" the last line that is send is a "01"
+		(end of file record) that indicated the end of the data 
+		transmission. After the last line is send, the "00" return value
+		is returned showing that the next command can be executed.  
+
+?? command:
+-----------
+
+  syntax:	??
+
+  parameter:	none
+
+  description:	prints out the help text to the serial connection
+
+
+ve command:
+-----------
+
+  syntax:	ve
+
+  parameter:	none
+
+  description:	prints out the version information of the current firmware
+		The version string contains a version number as well as the 
+		commands that are supported at the moment:
+		like:  "MEEPROMER V0.91 2013-04-13; CMD:bw,br,pw,ve,??" 
+
