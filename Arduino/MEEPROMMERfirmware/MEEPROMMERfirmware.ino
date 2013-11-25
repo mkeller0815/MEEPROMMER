@@ -14,7 +14,7 @@
  *
  **/
 
-#define VERSIONSTRING "MEEPROMMER $Revision: 1.2 $ $Date: 2013/05/05 11:01:54 $, CMD:B,b,w,W,V"
+#define VERSIONSTRING "MEEPROMMER $Revision: 1.2 $ $Date: 2013/05/05 11:01:54 $, CMD:R,r,w,W,V"
 
 // shiftOut part
 #define DS      A0
