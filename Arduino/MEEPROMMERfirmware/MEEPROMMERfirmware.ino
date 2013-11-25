@@ -139,9 +139,9 @@ void set_address_bus(unsigned int address)
   bitClear(PORTC,PORTC_LATCH);
 
   //shift out highbyte
-  fastShiftOut(low);
-  //shift out lowbyte
   fastShiftOut(hi);
+  //shift out lowbyte
+  fastShiftOut(low);
 
   //enable latch and set address
   bitSet(PORTC,PORTC_LATCH);
