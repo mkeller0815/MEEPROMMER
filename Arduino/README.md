@@ -1,2 +1,1 @@
-This folder contains the Arduino related files for the
-firmware
+This folder contains the Arduino firmware
