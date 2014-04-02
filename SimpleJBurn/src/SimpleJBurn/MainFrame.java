@@ -53,6 +53,8 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
     int offset = 0;
     long filesize = 0;
     int readwrite = 0;
+    int serialSpeed = 115200;
+    //int serialSpeed = 57600;
 
     class ReadTask extends SwingWorker<Void, Void> {
 
@@ -148,6 +150,7 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
                 log.insertString(log.getLength(), filesize + " bytes checked from 0x" + Utility.wordToHex(offset)
                         + " to 0x" + Utility.wordToHex(offset + (int) filesize - 1) + ", " + byteCount
                         + " byte are different." + newline,null);
+                textPane.setCaretPosition(textPane.getDocument().getLength());
             }
         } catch (BadLocationException e) {
             System.err.println("Output Error");
@@ -189,6 +192,8 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
                     mySerial.out.write(data, i, 1024);
                     log.insertString(log.getLength(), "wrote data from 0x" + Utility.wordToHex(address + i)
                             + " to 0x" + Utility.wordToHex(address + i + 1023) + newline,null);
+                    textPane.setCaretPosition(textPane.getDocument().getLength());
+
                     byte c = ' ';
                     do {
                         c = (byte) mySerial.in.read();
@@ -238,6 +243,7 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
                     + Utility.wordToHex(address + (int) len - 1) + " in "
                     + (float) (end - start) / 1000
                     + " seconds " + newline,null);
+            textPane.setCaretPosition(textPane.getDocument().getLength());
         } catch (BadLocationException e) {
             System.err.println("Output Error");
         }
@@ -525,7 +531,7 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
         selectedComPort = (String) serialSelect.getSelectedItem();
         try {
             mySerial.disconnect();
-            mySerial.connect(selectedComPort, 57600);
+            mySerial.connect(selectedComPort, serialSpeed);
             log.insertString(log.getLength(), selectedComPort + " is now connected." + newline,null);
             Thread.sleep(1000);
         } catch (Exception ex) {
@@ -707,10 +713,10 @@ public class MainFrame extends javax.swing.JFrame implements PropertyChangeListe
     }//GEN-LAST:event_readButtonActionPerformed
 
     private void clearButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearButtonActionPerformed
-        appendToLog("Clearing EEPROM. setting " + maxAddress + " bytes to 0x00"
+        appendToLog("Clearing EEPROM. setting " + maxAddress + " bytes to 0xff"
                 + newline);
         for (int i = 0; i < maxAddress; i++) {
-            data[i] = 0;
+            data[i] = (byte)(0xff);
         }
         clearButton.setEnabled(false);
         readwrite = 0;
