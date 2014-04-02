@@ -14,7 +14,7 @@
  *
  **/
 
-#define VERSIONSTRING "MEEPROMMER $Revision: 1.2 $ $Date: 2013/05/05 11:01:54 $, CMD:B,b,w,W,V"
+#define VERSIONSTRING "MEEPROMMER $Revision: 1.2 $ $Date: 2013/05/05 11:01:54 $, CMD:R,r,w,W,V"
 
 // shiftOut part
 #define DS      A0
@@ -58,6 +58,7 @@ unsigned int lineLength,dataLength;
 //define COMMANDS
 #define NOCOMMAND    0
 #define VERSION      1
+#define SET_ADDRESS  2
 
 #define READ_HEX    10
 #define READ_BIN    11
@@ -312,6 +313,9 @@ byte parseCommand() {
   lineLength=hexByte(cmdbuf+12);
   byte retval = 0;
   switch(cmdbuf[0]) {
+  case 'A':
+    retval = SET_ADDRESS;
+    break;
   case 'R':
     retval = READ_HEX;
     break;
@@ -504,6 +508,14 @@ void loop() {
   byte cmd = parseCommand();
   int bytes = 0;
   switch(cmd) {
+  case SET_ADDRESS:
+    // Set the address bus to an arbitrary value.
+    // Useful for debugging shift-register wiring, byte-order.
+    // e.g. A,00FF
+    Serial.print("Setting address bus to 0x");
+    Serial.println(cmdbuf + 2);
+    set_address_bus(startAddress);
+    break;
   case READ_HEX:
     //set a default if needed to prevent infinite loop
     if(lineLength==0) lineLength=32;
